@@ -120,6 +120,32 @@ class SUMOUtils(SUMOConnector):
             LOGGER.debug('Entity %s not found.', entity)
         return default
 
+    def get_depart(self, entity, default=float('NaN')):
+        """ 
+        Returns the departure recorded by SUMO for the given entity. 
+
+        The functions process_tripinfo_file() needs to be called in advance to initialize 
+        the data structures required.
+
+        If the entity does not exist or does not have the value, it returns the default value.
+        """
+        if entity in self.tripinfo:
+            LOGGER.debug('TRIPINFO for %s', entity)
+            if 'depart' in self.tripinfo[entity]:
+                LOGGER.debug('depart %s', self.tripinfo[entity]['depart'])
+                return float(self.tripinfo[entity]['depart'])
+            LOGGER.debug('depart not found.')
+        elif entity in self.personinfo:
+            LOGGER.debug('PERSONINFO for %s', entity)
+            LOGGER.debug('%s', pformat(self.personinfo[entity]))
+            if 'depart' in self.personinfo[entity]:
+                LOGGER.debug('depart %s', self.personinfo[entity]['depart'])
+                return float(self.personinfo[entity]['depart'])
+            LOGGER.debug('depart not found.')
+        else:
+            LOGGER.debug('Entity %s not found.', entity)
+        return default
+
     def get_duration(self, entity, default=float('NaN')):
         """ 
         Returns the duration computed by SUMO for the given entity. 
