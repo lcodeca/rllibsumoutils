@@ -102,6 +102,7 @@ class SUMOUtils(SUMOConnector):
             return default
         elif entity in self.personinfo:
             LOGGER.debug('PERSONINFO for %s', entity)
+            LOGGER.debug('%s', pformat(self.personinfo[entity]))
             time_loss, ts_found = 0.0, False
             for _, stage in self.personinfo[entity]['stages']:
                 if 'timeLoss' in stage:
