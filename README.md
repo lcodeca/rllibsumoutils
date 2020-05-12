@@ -22,6 +22,9 @@ the Eclipse Public License 2.0 which is available at <http://www.eclipse.org/leg
 * Install: `pip3 install .` from the root directory, or `python3 setup.py install`
 * Development install: `pip3 install -e .` or `python3 setup.py develop`
 
+### Note: rtree library
+To use `rtree`, `libspatialindex-dev` is required to be installed.
+
 ## Example
 
 * Given the ~under development~ status of the project, some examples are provided.

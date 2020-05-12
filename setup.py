@@ -31,6 +31,6 @@ setup(name='rllibsumoutils',
       author_email='lara.codeca@gmail.com',
       license='EPL-2.0',
       packages=['rllibsumoutils'],
-      install_requires=['lxml'],
+      install_requires=['lxml', 'rtree'],
       include_package_data=True,
       zip_safe=False)
