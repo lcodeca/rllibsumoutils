@@ -10,7 +10,7 @@
 import collections
 import os
 import sys
-from pprint import pformat, pprint
+from pprint import pformat
 
 from numpy.random import RandomState
 
@@ -97,7 +97,7 @@ class SUMOAgent(object):
     def step(self, action, sumo_handler):
         """ Implements the logic of each specific action passed as input. """
         print('Agent {}: action {}'.format(self.agent_id, action))
-        # Subscriptions EXAMPLE: 
+        # Subscriptions EXAMPLE:
         #     {'agent_0': {64: 14.603468282230542, 104: None},
         #      'agent_1': {64: 12.922797055918513,
         #                  104: ('veh.19', 27.239870121802596)}}
@@ -114,9 +114,9 @@ class SUMOAgent(object):
         # https://sumo.dlr.de/pydoc/traci._route.html#RouteDomain-add
         sumo_handler.traci_handler.route.add(route, ['road'])
         # insert the agent in the simulation
-        # traci.vehicle.add(self, vehID, routeID, typeID='DEFAULT_VEHTYPE', 
-        #   depart=None, departLane='first', departPos='base', departSpeed='0', 
-        #   arrivalLane='current', arrivalPos='max', arrivalSpeed='current', 
+        # traci.vehicle.add(self, vehID, routeID, typeID='DEFAULT_VEHTYPE',
+        #   depart=None, departLane='first', departPos='base', departSpeed='0',
+        #   arrivalLane='current', arrivalPos='max', arrivalSpeed='current',
         #   fromTaz='', toTaz='', line='', personCapacity=0, personNumber=0)
         sumo_handler.traci_handler.vehicle.add(
             self.agent_id, route, departLane='best', departSpeed='max')
@@ -186,7 +186,7 @@ class SUMOTestMultiAgentEnv(MultiAgentEnv):
 
     def get_reward(self, agent):
         """ Return the reward for a given agent. """
-        speed = self.agents[agent].config['max-speed'] # if the agent is not in the subscriptions 
+        speed = self.agents[agent].config['max-speed'] # if the agent is not in the subscriptions
                                                        # and this function is called, the agent has
                                                        # reached the end of the road
         if agent in self.simulation.veh_subscriptions:
@@ -229,8 +229,8 @@ class SUMOTestMultiAgentEnv(MultiAgentEnv):
         # Move the simulation forward
         starting_time = waiting_agents[0][0]
         self.simulation.fast_forward(starting_time)
-        self.simulation._default_step_action(self.agents.keys()) # to retrieve the subs
-        
+        self.simulation._default_step_action(self.agents.keys()) # hack to retrieve the subs
+
         # Observations
         initial_obs = self.compute_observations(self.agents.keys())
 
@@ -257,7 +257,7 @@ class SUMOTestMultiAgentEnv(MultiAgentEnv):
         dones = {}
         dones['__all__'] = False
 
-        shuffled_agents = sorted(action_dict.keys()) # it may seem not smar to sort something that 
+        shuffled_agents = sorted(action_dict.keys()) # it may seem not smar to sort something that
                                                      # may need to be shuffled afterwards, but it
                                                      # is a matter of consistency instead of using
                                                      # whatever insertion order was used in the dict
@@ -268,8 +268,8 @@ class SUMOTestMultiAgentEnv(MultiAgentEnv):
 
         # Take action
         for agent in shuffled_agents:
-            self.agents[agent].step(action_dict[agent], self.simulation)        
-        
+            self.agents[agent].step(action_dict[agent], self.simulation)
+
         print('Before SUMO')
         ongoing_simulation = self.simulation.step(until_end=False, agents=set(action_dict.keys()))
         print('After SUMO')
@@ -278,7 +278,7 @@ class SUMOTestMultiAgentEnv(MultiAgentEnv):
         if not ongoing_simulation:
             print('Reached the end of the SUMO simulation.')
             dones['__all__'] = True
-        
+
         obs, rewards, infos = {}, {}, {}
 
         for agent in action_dict:
@@ -326,4 +326,4 @@ class SUMOTestMultiAgentEnv(MultiAgentEnv):
         """ Returns the observation space. """
         return gym.spaces.MultiDiscrete(
             [self.agents[agent].config['max-speed'] + 1,
-             self._config['scenario_config']['misc']['max-distance'] + 1])    
+             self._config['scenario_config']['misc']['max-distance'] + 1])

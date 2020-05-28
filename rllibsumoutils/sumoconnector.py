@@ -7,10 +7,8 @@
     http://www.eclipse.org/legal/epl-2.0.
 """
 
-import collections
 import logging
 import os
-from pprint import pformat
 import sys
 
 # """ Import SUMO library """
@@ -34,17 +32,17 @@ class SUMOConnector(object):
         Initialize SUMO and sets the beginning of the simulation.
 
         Param:
-            config: Dict. 
+            config: Dict.
                 {
                     'sumo_cfg': SUMO configuration file. String.
-                    'sumo_params': Additional parameter for the SUMO command line. 
+                    'sumo_params': Additional parameter for the SUMO command line.
                                    List of strings.
                     'end_of_sim': Simulation ending time, in seconds. Float.
-                    'update_freq': SUMO update frequency in number of traci.simulationStep() calls. 
-                                   Integer. 
-                    'tripinfo_xml_file': SUMO tripinfo file. Required for gathering metrics only. 
+                    'update_freq': SUMO update frequency in number of traci.simulationStep() calls.
+                                   Integer.
+                    'tripinfo_xml_file': SUMO tripinfo file. Required for gathering metrics only.
                                          String.
-                    'tripinfo_xml_schema': SUMO tripinfo XML Schema file. 
+                    'tripinfo_xml_schema': SUMO tripinfo XML Schema file.
                                            Required for gathering metrics only. String.
                     'misc': Anything. User defined.
                 }
@@ -95,14 +93,14 @@ class SUMOConnector(object):
             return True
         if self.traci_handler.simulation.getTime() > self._config['end_of_sim']:
             # the simulatio reach the predefined (from parameters) end
-            return True 
+            return True
         if current_step_counter == self._config['update_freq'] and not until_end:
             return True
         return False
 
     def step(self, until_end=False, agents=set()):
-        """ 
-        Runs a "learning" step and returns if the simulation has finished. 
+        """
+        Runs a "learning" step and returns if the simulation has finished.
         This function in meant to be called by the RLLIB Environment.
 
         Params:
@@ -114,21 +112,20 @@ class SUMOConnector(object):
         """
         ## Execute SUMO steps until the learning needs to happen
         current_step_counter = 0
-        LOGGER.debug('=============================================================================')
+        LOGGER.debug('============================================================================')
         while not self._stopping_condition(current_step_counter, until_end):
-            LOGGER.debug('[%s] Current step counter: %d, Update frequency: %d', 
+            LOGGER.debug('[%s] Current step counter: %d, Update frequency: %d',
                          str(until_end), current_step_counter, self._config['update_freq'])
             self.traci_handler.simulationStep()
             self._sumo_steps += 1
             current_step_counter += 1
             self._default_step_action(agents)
-        LOGGER.debug('=============================================================================')
+        LOGGER.debug('============================================================================')
 
         ## Set if simulation has ended
         self._is_ongoing = (not self._manually_stopped and
                             self.traci_handler.simulation.getMinExpectedNumber() > 0 and
                             self.traci_handler.simulation.getTime() <= self._config['end_of_sim'])
-        
 
         if not self.is_ongoing_sim():
             LOGGER.debug('The SUMO simulation is done.')
@@ -137,8 +134,8 @@ class SUMOConnector(object):
         return self.is_ongoing_sim()
 
     def fast_forward(self, time):
-        """ 
-        Move the simulation forward (without doing anything else) until the given time. 
+        """
+        Move the simulation forward (without doing anything else) until the given time.
         Param:
             time: Float, simulation time in seconds.
         """
@@ -172,3 +169,4 @@ class SUMOConnector(object):
             pass
 
     ################################################################################################
+    

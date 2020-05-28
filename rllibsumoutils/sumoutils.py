@@ -14,9 +14,6 @@ import sys
 
 from pprint import pformat
 
-import numpy as np
-from numpy.random import RandomState
-
 from lxml import etree
 
 from rllibsumoutils.sumoconnector import SUMOConnector
@@ -43,16 +40,16 @@ class SUMOUtils(SUMOConnector):
     ######################################### TRIPINFO FILE ########################################
 
     def process_tripinfo_file(self):
-        """ 
-            Closes the TraCI connections, then reads and process the tripinfo data. 
+        """
+            Closes the TraCI connections, then reads and process the tripinfo data.
             It requires 'tripinfo_xml_file' and 'tripinfo_xml_schema' configuration parametes set.
         """
-        
+
         if 'tripinfo_xml_file' not in self._config:
             raise Exception(
                 'Function process_tripinfo_file requires the parameter "tripinfo_xml_file" set.',
                 self._config)
-        
+
         if 'tripinfo_xml_schema' not in self._config:
             raise Exception(
                 'Function process_tripinfo_file requires the parameter "tripinfo_xml_schema" set.',
@@ -85,10 +82,10 @@ class SUMOUtils(SUMOConnector):
         LOGGER.debug('PERSONINFO: \n%s', pformat(self.personinfo))
 
     def get_timeloss(self, entity, default=float('NaN')):
-        """ 
-        Returns the timeLoss computed by SUMO for the given entity. 
+        """
+        Returns the timeLoss computed by SUMO for the given entity.
 
-        The functions process_tripinfo_file() needs to be called in advance to initialize 
+        The functions process_tripinfo_file() needs to be called in advance to initialize
         the data structures required.
 
         If the entity does not exist or does not have the value, it returns the default value.
@@ -122,10 +119,10 @@ class SUMOUtils(SUMOConnector):
         return default
 
     def get_depart(self, entity, default=float('NaN')):
-        """ 
-        Returns the departure recorded by SUMO for the given entity. 
+        """
+        Returns the departure recorded by SUMO for the given entity.
 
-        The functions process_tripinfo_file() needs to be called in advance to initialize 
+        The functions process_tripinfo_file() needs to be called in advance to initialize
         the data structures required.
 
         If the entity does not exist or does not have the value, it returns the default value.
@@ -148,10 +145,10 @@ class SUMOUtils(SUMOConnector):
         return default
 
     def get_duration(self, entity, default=float('NaN')):
-        """ 
-        Returns the duration computed by SUMO for the given entity. 
+        """
+        Returns the duration computed by SUMO for the given entity.
 
-        The functions process_tripinfo_file() needs to be called in advance to initialize 
+        The functions process_tripinfo_file() needs to be called in advance to initialize
         the data structures required.
 
         If the entity does not exist or does not have the value, it returns the default value.
@@ -181,10 +178,10 @@ class SUMOUtils(SUMOConnector):
         return default
 
     def get_arrival(self, entity, default=float('NaN')):
-        """ 
-        Returns the arrival computed by SUMO for the given entity. 
-        
-        The functions process_tripinfo_file() needs to be called in advance to initialize 
+        """
+        Returns the arrival computed by SUMO for the given entity.
+
+        The functions process_tripinfo_file() needs to be called in advance to initialize
         the data structures required.
 
         If the entity does not exist or does not have the value, it returns the default value.
@@ -217,28 +214,29 @@ class SUMOUtils(SUMOConnector):
         return default
 
     def get_global_travel_time(self):
-        """ 
-        Returns the global travel time computed from SUMO tripinfo data. 
-        
-        The functions process_tripinfo_file() needs to be called in advance to initialize 
+        """
+        Returns the global travel time computed from SUMO tripinfo data.
+
+        The functions process_tripinfo_file() needs to be called in advance to initialize
         the data structures required.
         """
         gtt = 0
         for entity in self.tripinfo:
             gtt += self.get_duration(entity, default=0.0)
         for entity in self.personinfo:
-            gtt += self.get_duration(entity, default=0.0)  
+            gtt += self.get_duration(entity, default=0.0)
         return gtt
 
     ############################################ ROUTING ###########################################
 
     @staticmethod
     def get_mode_parameters(mode):
-        """ 
+        """
         Return the correst TraCI parameters for the requested mode.
-        See https://sumo.dlr.de/docs/TraCI/Simulation_Value_Retrieval.html#command_0x87_find_intermodal_route   
-        
-        Param: mode, String. 
+        See: https://sumo.dlr.de/docs/TraCI/Simulation_Value_Retrieval.html
+                    #command_0x87_find_intermodal_route
+
+        Param: mode, String.
         Returns: _mode, _ptype, _vtype
         """
         if mode == 'public':
@@ -251,8 +249,8 @@ class SUMOUtils(SUMOConnector):
                                     #  creates unusable alternatives)
 
     def is_valid_route(self, mode, route):
-        """ 
-        Handle findRoute and findIntermodalRoute results. 
+        """
+        Handle findRoute and findIntermodalRoute results.
 
         Params:
             mode, String.
@@ -282,7 +280,7 @@ class SUMOUtils(SUMOConnector):
 
     @staticmethod
     def cost_from_route(route):
-        """ 
+        """
         Compute the route cost.
         Params:
             route, return value of findRoute or findIntermodalRoute.
@@ -291,11 +289,11 @@ class SUMOUtils(SUMOConnector):
         for stage in route:
             cost += stage.cost
         return cost
-    
+
     @staticmethod
     def travel_time_from_route(route):
-        """ 
-        Compute the route estimated travel time.        
+        """
+        Compute the route estimated travel time.
         Params:
             route, return value of findRoute or findIntermodalRoute.
         """

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-""" PYTHON3 - Setup for rllibsumoutils. 
+""" PYTHON3 - Setup for rllibsumoutils.
 
     Author: Lara CODECA
 

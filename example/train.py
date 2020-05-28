@@ -10,17 +10,14 @@
 """
 
 from copy import deepcopy
-import logging
 import pathlib
 import random
 import sys
 import traceback
 
 import ray
-from ray import tune
 
 from ray.rllib.agents.ppo import ppo
-from ray.rllib.agents.trainer import COMMON_CONFIG
 from ray.tune.logger import pretty_print
 
 import marlenvironment
@@ -41,11 +38,12 @@ def _main():
     policy_conf['simple_optimizer'] = True
     policy_conf['batch_mode'] = 'complete_episodes'
     policy_params = {}
-    
+
     # Load default Scenario configuration for the LEARNING ENVIRONMENT
     scenario_config = {
         "agent-rnd-order": True,
-        "sumo-cfg-file": "{}/scenario/sumo.cfg.xml".format(pathlib.Path(__file__).parent.absolute()),
+        "sumo-cfg-file": "{}/scenario/sumo.cfg.xml".format(
+            pathlib.Path(__file__).parent.absolute()),
         "sumo-params": ['--collision.action', 'warn'],
         "seed": 42,
         "misc": {
@@ -99,7 +97,7 @@ def _main():
     # Config for the PPO trainer from the MARLEnv
     policies = {}
     for agent in marl_env.get_agents():
-        agent_policy_params = deepcopy(policy_params) 
+        agent_policy_params = deepcopy(policy_params)
         from_val, to_val = agent_init[agent]['init']
         agent_policy_params['init'] = lambda: random.randint(from_val, to_val)
         agent_policy_params['actions'] = marl_env.get_set_of_actions(agent)
@@ -116,7 +114,7 @@ def _main():
     policy_conf['env_config'] = env_config
     trainer = ppo.PPOTrainer(env='test_env',
                              config=policy_conf)
-    
+
     # Single training iteration, just for testing.
     result = trainer.train()
     print(pretty_print(result))
@@ -124,7 +122,7 @@ def _main():
 if __name__ == '__main__':
     try:
         _main()
-    except:
+    except Exception:
         EXC_TYPE, EXC_VALUE, EXC_TRACEBACK = sys.exc_info()
         traceback.print_exception(EXC_TYPE, EXC_VALUE, EXC_TRACEBACK, file=sys.stdout)
     finally:
