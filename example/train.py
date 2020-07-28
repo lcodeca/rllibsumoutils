@@ -106,11 +106,9 @@ def _main():
                            marl_env.get_obs_space(agent),
                            marl_env.get_action_space(agent),
                            agent_policy_params)
-    policy_conf['multiagent'] = {
-        'policies': policies,
-        'policy_mapping_fn': lambda agent_id: agent_id,
-        'policies_to_train': ['ppo_policy'],
-    }
+    policy_conf['multiagent']['policies'] = policies
+    policy_conf['multiagent']['policy_mapping_fn'] = lambda agent_id: agent_id
+    policy_conf['multiagent']['policies_to_train'] = ['ppo_policy']
     policy_conf['env_config'] = env_config
     trainer = ppo.PPOTrainer(env='test_env',
                              config=policy_conf)
