@@ -14,7 +14,7 @@ import sys
 # """ Import SUMO library """
 if 'SUMO_HOME' in os.environ:
     sys.path.append(os.path.join(os.environ['SUMO_HOME'], 'tools'))
-    import traci
+    import libsumo as traci
     import traci.constants as tc
 else:
     raise Exception("Please declare environment variable 'SUMO_HOME'")
@@ -169,4 +169,3 @@ class SUMOConnector(object):
             pass
 
     ################################################################################################
-    

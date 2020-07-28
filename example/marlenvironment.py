@@ -168,8 +168,11 @@ class SUMOTestMultiAgentEnv(MultiAgentEnv):
         if agent in self.simulation.veh_subscriptions:
             speed = round(self.simulation.veh_subscriptions[agent][tc.VAR_SPEED] * MS_TO_KMH)
             leader = self.simulation.veh_subscriptions[agent][tc.VAR_LEADER]
-            if leader:
-                distance = round(leader[1])
+            if leader: ## compatible with traci
+                veh, dist = leader
+                if veh:
+                    ## compatible with libsumo
+                    distance = round(dist)
         ret = [speed, distance]
         print('Observation: {}'.format(ret))
         return ret
