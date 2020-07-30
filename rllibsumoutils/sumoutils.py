@@ -8,6 +8,7 @@
 """
 
 import collections
+from copy import deepcopy
 import logging
 import os
 import sys
@@ -16,7 +17,7 @@ from pprint import pformat
 
 from lxml import etree
 
-from rllibsumoutils.sumoconnector import SUMOConnector
+from rllibsumoutils.sumoconnector import SUMOConnector, DEFAULT_CONFIG
 
 # """ Import SUMO library """
 if 'SUMO_HOME' in os.environ:
@@ -26,7 +27,17 @@ if 'SUMO_HOME' in os.environ:
 else:
     sys.exit("please declare environment variable 'SUMO_HOME'")
 
-LOGGER = logging.getLogger(__name__)
+####################################################################################################
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+
+####################################################################################################
+
+def sumo_default_config():
+    return deepcopy(DEFAULT_CONFIG)
+
+####################################################################################################
 
 class SUMOUtils(SUMOConnector):
     """ A wrapper for the interaction with the SUMO simulation that adds functionalities """
@@ -45,9 +56,9 @@ class SUMOUtils(SUMOConnector):
             It requires 'tripinfo_xml_file' and 'tripinfo_xml_schema' configuration parametes set.
         """
 
-        if 'tripinfo_xml_file' not in self._config:
+        if 'tripinfo_keyword' not in self._config:
             raise Exception(
-                'Function process_tripinfo_file requires the parameter "tripinfo_xml_file" set.',
+                'Function process_tripinfo_file requires the parameter "tripinfo_keyword" set.',
                 self._config)
 
         if 'tripinfo_xml_schema' not in self._config:
@@ -64,9 +75,10 @@ class SUMOUtils(SUMOConnector):
 
         schema = etree.XMLSchema(file=self._config['tripinfo_xml_schema'])
         parser = etree.XMLParser(schema=schema)
-        tree = etree.parse(self._config['tripinfo_xml_file'], parser)
+        tripinfo_file = '{}{}'.format(self._sumo_output_prefix, self._config['tripinfo_keyword'])
+        tree = etree.parse(tripinfo_file, parser)
 
-        LOGGER.debug('Processing %s tripinfo file.', self._config['tripinfo_xml_file'])
+        logger.info('Processing %s tripinfo file.', tripinfo_file)
         for element in tree.getroot():
             if element.tag == 'tripinfo':
                 self.tripinfo[element.attrib['id']] = dict(element.attrib)
@@ -78,8 +90,8 @@ class SUMOUtils(SUMOConnector):
                 self.personinfo[element.attrib['id']]['stages'] = stages
             else:
                 raise Exception('Unrecognized element in the tripinfo file.')
-        LOGGER.debug('TRIPINFO: \n%s', pformat(self.tripinfo))
-        LOGGER.debug('PERSONINFO: \n%s', pformat(self.personinfo))
+        logger.debug('TRIPINFO: \n%s', pformat(self.tripinfo))
+        logger.debug('PERSONINFO: \n%s', pformat(self.personinfo))
 
     def get_timeloss(self, entity, default=float('NaN')):
         """
@@ -91,31 +103,31 @@ class SUMOUtils(SUMOConnector):
         If the entity does not exist or does not have the value, it returns the default value.
         """
         if entity in self.tripinfo:
-            LOGGER.debug('TRIPINFO for %s', entity)
+            logger.debug('TRIPINFO for %s', entity)
             if 'timeLoss' in self.tripinfo[entity]:
-                LOGGER.debug('timeLoss %s', self.tripinfo[entity]['timeLoss'])
+                logger.debug('timeLoss %s', self.tripinfo[entity]['timeLoss'])
                 return float(self.tripinfo[entity]['timeLoss'])
-            LOGGER.debug('timeLoss not found.')
+            logger.debug('timeLoss not found.')
             return default
         elif entity in self.personinfo:
-            LOGGER.debug('PERSONINFO for %s', entity)
-            LOGGER.debug('%s', pformat(self.personinfo[entity]))
+            logger.debug('PERSONINFO for %s', entity)
+            logger.debug('%s', pformat(self.personinfo[entity]))
             time_loss, ts_found = 0.0, False
             for _, stage in self.personinfo[entity]['stages']:
                 if 'timeLoss' in stage:
-                    LOGGER.debug('timeLoss %s', stage['timeLoss'])
+                    logger.debug('timeLoss %s', stage['timeLoss'])
                     time_loss += float(stage['timeLoss'])
                     ts_found = True
             if not ts_found:
-                LOGGER.debug('timeLoss not found.')
+                logger.debug('timeLoss not found.')
                 return default
             if time_loss <= 0:
-                LOGGER.debug('ERROR: timeLoss is %.2f', time_loss)
+                logger.debug('ERROR: timeLoss is %.2f', time_loss)
                 return default
-            LOGGER.debug('total timeLoss %.2f', time_loss)
+            logger.debug('total timeLoss %.2f', time_loss)
             return time_loss
         else:
-            LOGGER.debug('Entity %s not found.', entity)
+            logger.debug('Entity %s not found.', entity)
         return default
 
     def get_depart(self, entity, default=float('NaN')):
@@ -128,20 +140,20 @@ class SUMOUtils(SUMOConnector):
         If the entity does not exist or does not have the value, it returns the default value.
         """
         if entity in self.tripinfo:
-            LOGGER.debug('TRIPINFO for %s', entity)
+            logger.debug('TRIPINFO for %s', entity)
             if 'depart' in self.tripinfo[entity]:
-                LOGGER.debug('depart %s', self.tripinfo[entity]['depart'])
+                logger.debug('depart %s', self.tripinfo[entity]['depart'])
                 return float(self.tripinfo[entity]['depart'])
-            LOGGER.debug('depart not found.')
+            logger.debug('depart not found.')
         elif entity in self.personinfo:
-            LOGGER.debug('PERSONINFO for %s', entity)
-            LOGGER.debug('%s', pformat(self.personinfo[entity]))
+            logger.debug('PERSONINFO for %s', entity)
+            logger.debug('%s', pformat(self.personinfo[entity]))
             if 'depart' in self.personinfo[entity]:
-                LOGGER.debug('depart %s', self.personinfo[entity]['depart'])
+                logger.debug('depart %s', self.personinfo[entity]['depart'])
                 return float(self.personinfo[entity]['depart'])
-            LOGGER.debug('depart not found.')
+            logger.debug('depart not found.')
         else:
-            LOGGER.debug('Entity %s not found.', entity)
+            logger.debug('Entity %s not found.', entity)
         return default
 
     def get_duration(self, entity, default=float('NaN')):
@@ -154,14 +166,14 @@ class SUMOUtils(SUMOConnector):
         If the entity does not exist or does not have the value, it returns the default value.
         """
         if entity in self.tripinfo:
-            LOGGER.debug('TRIPINFO for %s', entity)
+            logger.debug('TRIPINFO for %s', entity)
             if 'duration' in self.tripinfo[entity]:
-                LOGGER.debug('duration %s', self.tripinfo[entity]['duration'])
+                logger.debug('duration %s', self.tripinfo[entity]['duration'])
                 return float(self.tripinfo[entity]['duration'])
-            LOGGER.debug('duration not found.')
+            logger.debug('duration not found.')
         elif entity in self.personinfo:
-            LOGGER.debug('PERSONINFO for %s', entity)
-            LOGGER.debug('%s', pformat(self.personinfo[entity]))
+            logger.debug('PERSONINFO for %s', entity)
+            logger.debug('%s', pformat(self.personinfo[entity]))
             if 'depart' in self.personinfo[entity]:
                 depart = float(self.personinfo[entity]['depart'])
                 arrival = depart
@@ -170,11 +182,11 @@ class SUMOUtils(SUMOConnector):
                         arrival = float(stage['arrival'])
                 duration = arrival - depart
                 if duration > 0:
-                    LOGGER.debug('duration %d', duration)
+                    logger.debug('duration %d', duration)
                     return duration
-            LOGGER.debug('duration impossible to compute.')
+            logger.debug('duration impossible to compute.')
         else:
-            LOGGER.debug('Entity %s not found.', entity)
+            logger.debug('Entity %s not found.', entity)
         return default
 
     def get_arrival(self, entity, default=float('NaN')):
@@ -187,30 +199,30 @@ class SUMOUtils(SUMOConnector):
         If the entity does not exist or does not have the value, it returns the default value.
         """
         if entity in self.tripinfo:
-            LOGGER.debug('TRIPINFO for %s', entity)
+            logger.debug('TRIPINFO for %s', entity)
             if 'arrival' in self.tripinfo[entity]:
-                LOGGER.debug('arrival %s', self.tripinfo[entity]['arrival'])
+                logger.debug('arrival %s', self.tripinfo[entity]['arrival'])
                 return float(self.tripinfo[entity]['arrival'])
-            LOGGER.debug('arrival not found.')
+            logger.debug('arrival not found.')
             return default
         elif entity in self.personinfo:
-            LOGGER.debug('PERSONINFO for %s', entity)
+            logger.debug('PERSONINFO for %s', entity)
             arrival, arrival_found = 0.0, False
             for _, stage in self.personinfo[entity]['stages']:
                 if 'arrival' in stage:
-                    LOGGER.debug('arrival %s', stage['arrival'])
+                    logger.debug('arrival %s', stage['arrival'])
                     arrival = float(stage['arrival'])
                     arrival_found = True
             if not arrival_found:
-                LOGGER.debug('arrival not found.')
+                logger.debug('arrival not found.')
                 return default
             if arrival <= 0:
-                LOGGER.debug('ERROR: arrival is %.2f', arrival)
+                logger.debug('ERROR: arrival is %.2f', arrival)
                 return default
-            LOGGER.debug('total arrival %.2f', arrival)
+            logger.debug('total arrival %.2f', arrival)
             return arrival
         else:
-            LOGGER.debug('Entity %s not found.', entity)
+            logger.debug('Entity %s not found.', entity)
         return default
 
     def get_global_travel_time(self):
