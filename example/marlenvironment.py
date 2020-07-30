@@ -8,6 +8,7 @@
 """
 
 import collections
+import logging
 import os
 import sys
 from pprint import pformat
@@ -17,7 +18,7 @@ from numpy.random import RandomState
 import gym
 from ray.rllib.env import MultiAgentEnv
 
-from rllibsumoutils.sumoutils import SUMOUtils
+from rllibsumoutils.sumoutils import SUMOUtils, sumo_default_config
 
 # """ Import SUMO library """
 if 'SUMO_HOME' in os.environ:
@@ -27,14 +28,20 @@ if 'SUMO_HOME' in os.environ:
 else:
     sys.exit("please declare environment variable 'SUMO_HOME'")
 
-def env_creator(config):
-    """ Environment creator used in the environment registration. """
-    print('[env_creator] Environment creation: SUMOTestMultiAgentEnv')
-    return SUMOTestMultiAgentEnv(config)
+####################################################################################################
 
-MS_TO_KMH = 3.6
+logger = logging.getLogger(__name__)
 
 ####################################################################################################
+
+def env_creator(config):
+    """ Environment creator used in the environment registration. """
+    logger.info('Environment creation: SUMOTestMultiAgentEnv')
+    return SUMOTestMultiAgentEnv(config)
+
+####################################################################################################
+
+MS_TO_KMH = 3.6
 
 class SUMOSimulationWrapper(SUMOUtils):
     """ A wrapper for the interaction with the SUMO simulation """
@@ -63,19 +70,19 @@ class SUMOSimulationWrapper(SUMOUtils):
             pass
         # get collisions
         collisions = self.traci_handler.simulation.getCollidingVehiclesIDList()
-        print('Collisions: {}'.format(collisions))
+        logger.debug('Collisions: %s', pformat(collisions))
         for veh in collisions:
             self.collisions[veh] += 1
         # get subscriptions
         self.veh_subscriptions = self.traci_handler.vehicle.getAllSubscriptionResults()
         for veh, vals in self.veh_subscriptions.items():
-            print('Subs:', veh, vals)
+            logger.debug('Subs: %s, %s', pformat(veh), pformat(vals))
         running = set()
         for agent in agents:
             if agent in self.veh_subscriptions:
                 running.add(agent)
         if len(running) == 0:
-            print('All the agent left the simulation..')
+            logger.info('All the agent left the simulation..')
             self.end_simulation()
         return True
 
@@ -90,22 +97,21 @@ class SUMOAgent(object):
         self.action_to_meaning = dict()
         for pos, action in enumerate(config['actions']):
             self.action_to_meaning[pos] = config['actions'][action]
-        print('CONFIG: agent "{}"'.format(self.agent_id))
-        print('CONFIG: \n{}'.format(pformat(self.config)))
-        print('CONFIG: actions \n{}'.format(pformat(self.action_to_meaning)))
+        logger.debug('Agent "%s" configuration \n %s', self.agent_id, pformat(self.config))
 
     def step(self, action, sumo_handler):
         """ Implements the logic of each specific action passed as input. """
-        print('Agent {}: action {}'.format(self.agent_id, action))
+        logger.debug('Agent %s: action %d', self.agent_id, action)
         # Subscriptions EXAMPLE:
         #     {'agent_0': {64: 14.603468282230542, 104: None},
         #      'agent_1': {64: 12.922797055918513,
         #                  104: ('veh.19', 27.239870121802596)}}
-        print('Subscriptions: {}'.format(sumo_handler.veh_subscriptions[self.agent_id]))
+        logger.debug('Subscriptions: %s', pformat(sumo_handler.veh_subscriptions[self.agent_id]))
         previous_speed = sumo_handler.veh_subscriptions[self.agent_id][tc.VAR_SPEED]
         new_speed = previous_speed + self.action_to_meaning[action]
-        print('Before {}, After {}'.format(previous_speed, new_speed))
+        logger.debug('Before %.2f', previous_speed)
         sumo_handler.traci_handler.vehicle.setSpeed(self.agent_id, new_speed)
+        logger.debug('After %.2f', new_speed)
         return
 
     def reset(self, sumo_handler):
@@ -122,10 +128,32 @@ class SUMOAgent(object):
             self.agent_id, route, departLane='best', departSpeed='max')
         sumo_handler.traci_handler.vehicle.subscribeLeader(self.agent_id)
         sumo_handler.traci_handler.vehicle.subscribe(self.agent_id, varIDs=[tc.VAR_SPEED, ])
-        print('Agent {} reset'.format(self.agent_id))
+        logger.info('Agent %s reset done.', self.agent_id)
         return self.agent_id, self.config['start']
 
 ####################################################################################################
+
+DEFAULT_SCENARIO_CONFING = {
+    'sumo_config': sumo_default_config(),
+    'agent_rnd_order': True,
+    'log_level': 'WARN',
+    'seed': 42,
+    'misc': {
+        'max_distance': 5000, # [m]
+    }
+}
+
+DEFAULT_AGENT_CONFING = {
+    'origin': 'road',
+    'destination': 'road',
+    'start': 0,
+    'actions': {     # increase/decrease the speed of:
+        'acc': 1.0,  # [m/s]
+        'none': 0.0, # [m/s]
+        'dec': -1.0, # [m/s]
+    },
+    'max_speed': 130, # km/h
+}
 
 class SUMOTestMultiAgentEnv(MultiAgentEnv):
     """
@@ -139,14 +167,26 @@ class SUMOTestMultiAgentEnv(MultiAgentEnv):
 
         self._config = config
 
+        # logging
+        level = logging.getLevelName(config['scenario_config']['log_level'])
+        logger.setLevel(level)
+
+        # SUMO Connector
         self.simulation = None
+
+        # Random number generator
         self.rndgen = RandomState(config['scenario_config']['seed'])
 
+        # Agent initialization
         self.agents_init_list = dict()
         self.agents = dict()
         for agent, agent_config in self._config['agent_init'].items():
             self.agents[agent] = SUMOAgent(agent, agent_config)
-        self.resetted = False
+
+        # Environment initialization
+        self.resetted = True
+        self.episodes = 0
+        self.steps = 0
 
     def seed(self, seed):
         """ Set the seed of a possible random number generator. """
@@ -156,6 +196,11 @@ class SUMOTestMultiAgentEnv(MultiAgentEnv):
         """ Returns a list of the agents. """
         return self.agents.keys()
 
+    def __del__(self):
+        logger.info('Environment destruction: SUMOTestMultiAgentEnv')
+        if self.simulation:
+            del self.simulation
+
     ######################################### OBSERVATIONS #########################################
 
     def get_observation(self, agent):
@@ -164,7 +209,7 @@ class SUMOTestMultiAgentEnv(MultiAgentEnv):
         See http://sumo.sourceforge.net/pydoc/traci._simulation.html
         """
         speed = 0
-        distance = self._config['scenario_config']['misc']['max-distance']
+        distance = self._config['scenario_config']['misc']['max_distance']
         if agent in self.simulation.veh_subscriptions:
             speed = round(self.simulation.veh_subscriptions[agent][tc.VAR_SPEED] * MS_TO_KMH)
             leader = self.simulation.veh_subscriptions[agent][tc.VAR_LEADER]
@@ -174,7 +219,7 @@ class SUMOTestMultiAgentEnv(MultiAgentEnv):
                     ## compatible with libsumo
                     distance = round(dist)
         ret = [speed, distance]
-        print('Observation: {}'.format(ret))
+        logger.debug('Agent %s --> Obs: %s', agent, pformat(ret))
         return ret
 
     def compute_observations(self, agents):
@@ -182,19 +227,18 @@ class SUMOTestMultiAgentEnv(MultiAgentEnv):
         obs = dict()
         for agent in agents:
             obs[agent] = self.get_observation(agent)
-        print('Observations: \n{}'.format(pformat(obs)))
         return obs
 
     ########################################### REWARDS ############################################
 
     def get_reward(self, agent):
         """ Return the reward for a given agent. """
-        speed = self.agents[agent].config['max-speed'] # if the agent is not in the subscriptions
+        speed = self.agents[agent].config['max_speed'] # if the agent is not in the subscriptions
                                                        # and this function is called, the agent has
                                                        # reached the end of the road
         if agent in self.simulation.veh_subscriptions:
             speed = round(self.simulation.veh_subscriptions[agent][tc.VAR_SPEED] * MS_TO_KMH)
-        print('Agent {} --> reward {}'.format(agent, speed))
+        logger.debug('Agent %s --> Reward %d', agent, speed)
         return speed
 
     def compute_rewards(self, agents):
@@ -209,18 +253,14 @@ class SUMOTestMultiAgentEnv(MultiAgentEnv):
     def reset(self):
         """ Resets the env and returns observations from ready agents. """
         self.resetted = True
+        self.episodes += 1
+        self.steps = 0
 
         # Reset the SUMO simulation
         if self.simulation:
             del self.simulation
-        config = {
-            'sumo_cfg': self._config['scenario_config']['sumo-cfg-file'],
-            'sumo_params': self._config['scenario_config']['sumo-params'],
-            'end_of_sim': self._config['scenario_config']['misc']['end-of-sim'],
-            'update_freq': self._config['scenario_config']['misc']['algo-update-freq'],
-        }
 
-        self.simulation = SUMOSimulationWrapper(config)
+        self.simulation = SUMOSimulationWrapper(self._config['scenario_config']['sumo_config'])
 
         # Reset the agents
         waiting_agents = list()
@@ -256,7 +296,9 @@ class SUMOTestMultiAgentEnv(MultiAgentEnv):
             infos (dict): Optional info values for each agent id.
         """
         self.resetted = False
-        print('============== SUMOTestMultiAgentEnv:step ==============')
+        self.steps += 1
+        logger.debug('====> [SUMOTestMultiAgentEnv:step] Episode: %d - Step: %d <====',
+                     self.episodes, self.steps)
         dones = {}
         dones['__all__'] = False
 
@@ -264,22 +306,22 @@ class SUMOTestMultiAgentEnv(MultiAgentEnv):
                                                      # may need to be shuffled afterwards, but it
                                                      # is a matter of consistency instead of using
                                                      # whatever insertion order was used in the dict
-        if self._config['scenario_config']['agent-rnd-order']:
+        if self._config['scenario_config']['agent_rnd_order']:
             ## randomize the agent order to minimize SUMO's insertion queues impact
-            print('Shuffling the order of the agents.')
+            logger.debug('Shuffling the order of the agents.')
             self.rndgen.shuffle(shuffled_agents) # in-place shuffle
 
         # Take action
         for agent in shuffled_agents:
             self.agents[agent].step(action_dict[agent], self.simulation)
 
-        print('Before SUMO')
+        logger.debug('Before SUMO')
         ongoing_simulation = self.simulation.step(until_end=False, agents=set(action_dict.keys()))
-        print('After SUMO')
+        logger.debug('After SUMO')
 
         ## end of the episode
         if not ongoing_simulation:
-            print('Reached the end of the SUMO simulation.')
+            logger.info('Reached the end of the SUMO simulation.')
             dones['__all__'] = True
 
         obs, rewards, infos = {}, {}, {}
@@ -290,7 +332,7 @@ class SUMOTestMultiAgentEnv(MultiAgentEnv):
                 # punish the agent and remove it from the simulation
                 dones[agent] = True
                 obs[agent] = [0, 0]
-                rewards[agent] = - self.agents[agent].config['max-speed']
+                rewards[agent] = - self.agents[agent].config['max_speed']
                 # infos[agent] = 'Collision'
                 self.simulation.traci_handler.remove(agent, reason=tc.REMOVE_VAPORIZED)
             else:
@@ -299,11 +341,11 @@ class SUMOTestMultiAgentEnv(MultiAgentEnv):
                 rewards[agent] = self.get_reward(agent)
                 # infos[agent] = ''
 
-        print('Observations: {}'.format(obs))
-        print('Rewards: {}'.format(rewards))
-        print('Dones: {}'.format(dones))
-        print('Info: {}'.format(infos))
-        print('========================================================')
+        logger.debug('Observations: %s', pformat(obs))
+        logger.debug('Rewards: %s', pformat(rewards))
+        logger.debug('Dones: %s', pformat(dones))
+        logger.debug('Info: %s', pformat(infos))
+        logger.debug('========================================================')
         return obs, rewards, dones, infos
 
     ################################## ACTIONS & OBSERATIONS SPACE #################################
@@ -322,11 +364,11 @@ class SUMOTestMultiAgentEnv(MultiAgentEnv):
 
     def get_obs_space_size(self, agent):
         """ Returns the size of the observation space. """
-        return ((self.agents[agent].config['max-speed'] + 1) *
-                (self._config['scenario_config']['misc']['max-distance'] + 1))
+        return ((self.agents[agent].config['max_speed'] + 1) *
+                (self._config['scenario_config']['misc']['max_distance'] + 1))
 
     def get_obs_space(self, agent):
         """ Returns the observation space. """
         return gym.spaces.MultiDiscrete(
-            [self.agents[agent].config['max-speed'] + 1,
-             self._config['scenario_config']['misc']['max-distance'] + 1])
+            [self.agents[agent].config['max_speed'] + 1,
+             self._config['scenario_config']['misc']['max_distance'] + 1])
