@@ -9,11 +9,9 @@
 
 import logging
 import os
-from random import random
 import sys
-from datetime import datetime
 
-# """ Import SUMO library """
+# Attach $SUMO_HOME/tools to the path to import SUMO libraries
 if 'SUMO_HOME' in os.environ:
     sys.path.append(os.path.join(os.environ['SUMO_HOME'], 'tools'))
     import sumolib
@@ -87,7 +85,7 @@ class SUMOConnector(object):
 
         # TraCI Handler and SUMO simulation
         logger.debug('Starting SUMOConnector in process %d.', os.getpid())
-        self._sumo_label = '{}'.format(self._get_unique_id())
+        self._sumo_label = '{}'.format(os.getpid())
         self._sumo_output_prefix = '{}{}'.format(config['sumo_output'], self._sumo_label)
         self._sumo_parameters = ['sumo', '-c', config['sumo_cfg']]
         if config['sumo_params'] is not None:
@@ -119,13 +117,6 @@ class SUMOConnector(object):
             self.end_simulation()
         except KeyError:
             logger.warning('Simulation %s already closed.', self._sumo_label)
-        #TODO: delete files
-
-    @staticmethod
-    def _get_unique_id():
-        now = datetime.utcnow()
-        now_in_sec = (now - datetime(1970, 1, 1)).total_seconds()
-        return round(random() * now_in_sec)
 
     ################################################################################################
 
