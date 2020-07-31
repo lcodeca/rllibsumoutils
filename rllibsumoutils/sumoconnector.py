@@ -17,8 +17,6 @@ from datetime import datetime
 if 'SUMO_HOME' in os.environ:
     sys.path.append(os.path.join(os.environ['SUMO_HOME'], 'tools'))
     import sumolib
-    # import traci
-    import libsumo as traci
     import traci.constants as tc
 else:
     raise Exception("Please declare environment variable 'SUMO_HOME'")
@@ -31,6 +29,8 @@ logger = logging.getLogger(__name__)
 ####################################################################################################
 
 DEFAULT_CONFIG = {
+    # SUMO Connector. Default is libsumo. Possible strings: 'libsumo' or 'traci'
+    'sumo_connector': 'libsumo',
     # SUMO configuration file. Required. String.
     'sumo_cfg': None,
     # Overides <output-prefix value='..'/>.
@@ -68,15 +68,25 @@ class SUMOConnector(object):
         Param:
             config: Dict. See DEFAULT_CONFIG.
         """
-        logger.debug('Starting SUMOConnector in process %d.', os.getpid())
-
         self._config = config
 
         # logging
         level = logging.getLevelName(config['log_level'])
         logger.setLevel(level)
 
+        # libsumo vs TraCI selection
+        if config['sumo_connector'] == 'libsumo':
+            import libsumo as traci
+        elif config['sumo_connector'] == 'traci':
+            import traci
+        else:
+            error = 'ERROR: "{}" is not a valid option for "sumo_connector".'.format(
+                config['sumo_connector'])
+            error += ' The possible connectors are "traci" or "libsumo".'
+            raise Exception(error)
+
         # TraCI Handler and SUMO simulation
+        logger.debug('Starting SUMOConnector in process %d.', os.getpid())
         self._sumo_label = '{}'.format(self._get_unique_id())
         self._sumo_output_prefix = '{}{}'.format(config['sumo_output'], self._sumo_label)
         self._sumo_parameters = ['sumo', '-c', config['sumo_cfg']]
