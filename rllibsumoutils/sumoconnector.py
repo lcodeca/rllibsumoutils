@@ -17,11 +17,6 @@ from datetime import datetime
 if 'SUMO_HOME' in os.environ:
     sys.path.append(os.path.join(os.environ['SUMO_HOME'], 'tools'))
     import sumolib
-<<<<<<< HEAD
-=======
-    # import traci
-    import libsumo as traci
->>>>>>> 44b8c6fb6787a0ee5790722dbd93012c71cabe2e
     import traci.constants as tc
 else:
     raise Exception("Please declare environment variable 'SUMO_HOME'")
@@ -34,11 +29,8 @@ logger = logging.getLogger(__name__)
 ####################################################################################################
 
 DEFAULT_CONFIG = {
-<<<<<<< HEAD
     # SUMO Connector. Default is libsumo. Possible strings: 'libsumo' or 'traci'
     'sumo_connector': 'libsumo',
-=======
->>>>>>> 44b8c6fb6787a0ee5790722dbd93012c71cabe2e
     # SUMO configuration file. Required. String.
     'sumo_cfg': None,
     # Overides <output-prefix value='..'/>.
@@ -122,24 +114,11 @@ class SUMOConnector(object):
         self._initialize_metrics()
 
     def __del__(self):
-<<<<<<< HEAD
         logger.debug('Deleting SUMOConnector in process %d.', os.getpid())
-=======
->>>>>>> 44b8c6fb6787a0ee5790722dbd93012c71cabe2e
         try:
             self.end_simulation()
         except KeyError:
             logger.warning('Simulation %s already closed.', self._sumo_label)
-<<<<<<< HEAD
-=======
-        #TODO: delete files
-
-    @staticmethod
-    def _get_unique_id():
-        now = datetime.utcnow()
-        now_in_sec = (now - datetime(1970, 1, 1)).total_seconds()
-        return round(random() * now_in_sec)
->>>>>>> 44b8c6fb6787a0ee5790722dbd93012c71cabe2e
 
     ################################################################################################
 
