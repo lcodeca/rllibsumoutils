@@ -53,10 +53,11 @@ def _main():
     scenario_config = deepcopy(marlenvironment.DEFAULT_SCENARIO_CONFING)
     scenario_config['seed'] = 42
     scenario_config['log_level'] = 'INFO'
-    scenario_config['sumo_config']['sumo_connector'] = 'libsumo'
+    scenario_config['sumo_config']['sumo_connector'] = 'traci'
     scenario_config['sumo_config']['sumo_cfg'] = '{}/scenario/sumo.cfg.xml'.format(
         pathlib.Path(__file__).parent.absolute())
     scenario_config['sumo_config']['sumo_params'] = ['--collision.action', 'warn']
+    scenario_config['sumo_config']['trace_file'] = True
     scenario_config['sumo_config']['end_of_sim'] = 3600 # [s]
     scenario_config['sumo_config']['update_freq'] = 10 # number of traci.simulationStep()
                                                        # for each learning step.
