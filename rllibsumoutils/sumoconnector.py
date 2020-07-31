@@ -68,6 +68,8 @@ class SUMOConnector(object):
         Param:
             config: Dict. See DEFAULT_CONFIG.
         """
+        logger.debug('Starting SUMOConnector in process %d.', os.getpid())
+
         self._config = config
 
         # logging
@@ -102,6 +104,7 @@ class SUMOConnector(object):
         self._initialize_metrics()
 
     def __del__(self):
+        logger.debug('Deleting SUMOConnector in process %d.', os.getpid())
         try:
             self.end_simulation()
         except KeyError:
