@@ -31,6 +31,8 @@ logger = logging.getLogger(__name__)
 DEFAULT_CONFIG = {
     # SUMO Connector. Default is libsumo. Possible strings: 'libsumo' or 'traci'
     'sumo_connector': 'libsumo',
+    # Enable the GUI, works only with traci
+    'sumo_gui': False,
     # SUMO configuration file. Required. String.
     'sumo_cfg': None,
     # Overides <output-prefix value='..'/>.
@@ -90,6 +92,9 @@ class SUMOConnector(object):
         self._sumo_label = '{}'.format(os.getpid())
         self._sumo_output_prefix = '{}{}'.format(config['sumo_output'], self._sumo_label)
         self._sumo_parameters = ['sumo', '-c', config['sumo_cfg']]
+        if config['sumo_gui'] and config['sumo_connector'] == 'traci':
+            self._sumo_parameters[0] = 'sumo-gui'
+            self._sumo_parameters.extend(['--start', '--quit-on-end'])
         if config['sumo_params'] is not None:
             self._sumo_parameters.extend(config['sumo_params'])
         self._sumo_parameters.extend(['--output-prefix', self._sumo_output_prefix])

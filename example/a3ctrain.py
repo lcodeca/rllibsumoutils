@@ -37,8 +37,8 @@ def _main():
     # Algorithm.
     policy_class = a3c.A3CTFPolicy
 
-    # https://github.com/ray-project/ray/blob/releases/0.8.6/rllib/agents/trainer.py#L44
-    # https://github.com/ray-project/ray/blob/releases/0.8.6/rllib/agents/a3c/a3c.py#L14
+    # https://github.com/ray-project/ray/blob/releases/0.8.7/rllib/agents/trainer.py#L44
+    # https://github.com/ray-project/ray/blob/releases/0.8.7/rllib/agents/a3c/a3c.py#L14
     policy_conf = a3c.DEFAULT_CONFIG
     policy_conf['batch_mode'] = 'complete_episodes'
     policy_conf['collect_metrics_timeout'] = 86400 # 1 day timeout
@@ -59,14 +59,15 @@ def _main():
     policy_conf['train_batch_size'] = 1
     policy_conf['use_gae'] = False
 
-    # https://github.com/ray-project/ray/blob/releases/0.8.6/rllib/models/catalog.py#L37
+    # https://github.com/ray-project/ray/blob/releases/0.8.7/rllib/models/catalog.py#L37
     policy_conf['model']['use_lstm'] = True
 
     # Load default Scenario configuration for the LEARNING ENVIRONMENT
     scenario_config = deepcopy(marlenvironment.DEFAULT_SCENARIO_CONFING)
     scenario_config['seed'] = 42
     scenario_config['log_level'] = 'INFO'
-    scenario_config['sumo_config']['sumo_connector'] = 'libsumo'
+    scenario_config['sumo_config']['sumo_connector'] = 'traci'
+    scenario_config['sumo_config']['sumo_gui'] = True
     scenario_config['sumo_config']['sumo_cfg'] = '{}/scenario/sumo.cfg.xml'.format(
         pathlib.Path(__file__).parent.absolute())
     scenario_config['sumo_config']['sumo_params'] = ['--collision.action', 'warn']
