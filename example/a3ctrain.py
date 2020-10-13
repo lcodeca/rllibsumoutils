@@ -32,7 +32,7 @@ def _main():
 
     # Initialize RAY.
     ray.tune.registry.register_env('test_env', marlenvironment.env_creator)
-    ray.init(memory=52428800, object_store_memory=78643200) ## minimum values
+    ray.init()
 
     # Algorithm.
     policy_class = a3c.A3CTFPolicy
