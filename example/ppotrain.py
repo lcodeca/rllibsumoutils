@@ -32,7 +32,7 @@ def _main():
 
     # Initialize RAY.
     ray.tune.registry.register_env('test_env', marlenvironment.env_creator)
-    ray.init(memory=52428800, object_store_memory=78643200) ## minimum values
+    ray.init()
 
     # Algorithm.
     policy_class = ppo.PPOTFPolicy
@@ -53,7 +53,7 @@ def _main():
     scenario_config = deepcopy(marlenvironment.DEFAULT_SCENARIO_CONFING)
     scenario_config['seed'] = 42
     scenario_config['log_level'] = 'INFO'
-    scenario_config['sumo_config']['sumo_connector'] = 'traci'
+    scenario_config['sumo_config']['sumo_connector'] = 'libsumo'
     scenario_config['sumo_config']['sumo_cfg'] = '{}/scenario/sumo.cfg.xml'.format(
         pathlib.Path(__file__).parent.absolute())
     scenario_config['sumo_config']['sumo_params'] = ['--collision.action', 'warn']
