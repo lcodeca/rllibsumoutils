@@ -7,15 +7,15 @@ Contact: Lara CODECA [lara.codeca@gmail.com]
 This program and the accompanying materials are made available under the terms of
 the Eclipse Public License 2.0 which is available at <http://www.eclipse.org/legal/epl-2.0>.
 
-## Requirements
+## Minimum Requirements
 
 * [SUMO 1.5](https://github.com/eclipse/sumo/tree/v1_5_0).
-* RLLIB [RAY](https://github.com/ray-project/ray/tree/ray-0.8.2)
+* RLLIB [RAY 0.8.2](https://github.com/ray-project/ray/tree/ray-0.8.2)
 
 ### Tested with
 
-* Eclipse SUMO Version 1.5.0
-    Build features: Linux-4.19.0-4-amd64 x86_64 GNU 8.3.0 Release Proj GUI GDAL FFmpeg OSG GL2PS SWIG
+* Eclipse SUMO Version 1.9.2
+* RLlib Version 1.3.0
 
 ## Installation
 
@@ -23,7 +23,10 @@ the Eclipse Public License 2.0 which is available at <http://www.eclipse.org/leg
 * Development install: `pip3 install -e .` or `python3 setup.py develop`
 
 ### Note: rtree library
+
 To use `rtree`, `libspatialindex-dev` is required to be installed.
+
+[In Ubuntu/Debian] `sudo apt install libspatialindex-dev python-rtree` and then `pip install rtree`
 
 ## Example
 
