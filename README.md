@@ -14,7 +14,7 @@ the Eclipse Public License 2.0 which is available at <http://www.eclipse.org/leg
 
 ### Tested with
 
-* Eclipse SUMO Version 1.9.2
+* Eclipse SUMO Version 1.8.0
 * RLlib Version 1.3.0
 
 ## Installation
