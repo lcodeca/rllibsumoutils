@@ -14,7 +14,9 @@ the Eclipse Public License 2.0 which is available at <http://www.eclipse.org/leg
 
 ### Tested with
 
-* Eclipse SUMO Version 1.8.0
+* Eclipse SUMO Version 1.9.2
+  * With 1.9.2 the options
+    * `scenario_config['sumo_config']['sumo_connector'] = 'libsumo'` with `scenario_config['sumo_config']['trace_file'] = True` does not work, but the bugh has already been fixed in [SUMO issue 8671](https://github.com/eclipse/sumo/issues/8671). If you need to enable SUMO tracing with 1.9.2, you need to use `scenario_config['sumo_config']['sumo_connector'] = 'traci'`
 * RLlib Version 1.3.0
 
 ## Installation
