@@ -67,6 +67,7 @@ def _main():
     scenario_config['seed'] = 42
     scenario_config['log_level'] = 'INFO'
     scenario_config['sumo_config']['sumo_connector'] = 'traci'
+    scenario_config['sumo_config']['trace_file'] = True
     scenario_config['sumo_config']['sumo_gui'] = True
     scenario_config['sumo_config']['sumo_cfg'] = '{}/scenario/sumo.cfg.xml'.format(
         pathlib.Path(__file__).parent.absolute())
